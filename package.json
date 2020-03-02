@@ -1,0 +1,25 @@
+{
+  "name": "employeemanagement",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.js",
+  "dependencies": {
+    "console.table": "^0.10.0",
+    "inquirer": "^7.0.4",
+    "mysql": "^2.18.1"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bmalkmus/employeeManagement.git"
+  },
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/bmalkmus/employeeManagement/issues"
+  },
+  "homepage": "https://github.com/bmalkmus/employeeManagement#readme"
+}
