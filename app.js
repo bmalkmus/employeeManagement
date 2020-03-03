@@ -7,12 +7,13 @@ var connection = mysql.createConnection({
     host : 'localhost',
     port: 3306,
     user: 'root',
-    password: 'Password',
+    password: 'password',
     database: 'employee_db'
 })
 
 connection.connect(function(err) {
     if (err) throw err;
+    console.log (`connected as id ${connection.threadID}`);
     runSearch();
   });
 
@@ -81,13 +82,13 @@ connection.connect(function(err) {
                     break;
 
                 case 'Add role':
-                    // addRole();
-                    console.log('Role Added')
+                    addRole();
+                    // console.log('Role Added')
                     break;
 
                 case 'Remove department':
-                    // removeDept();
-                    console.log('Department Added')
+                    removeDept();
+                    // console.log('Department Added')
                     break;
 
                 case 'Remove role':
@@ -114,16 +115,19 @@ connection.connect(function(err) {
 
   function addDept() {
       inquirer.prompt({
-          name: 'department',
+          name: 'addDepartment',
           type: 'input',
           message: "What is the new Department's name?"
       })
       .then(function(answer){
-          let query = `INSERT INTO department(name) VALUES (${answer.department})`
 
-          connection.query(query, function(err, res) {
+          connection.query(`INSERT INTO department SET ?`, 
+            {
+            name: answer.addDepartment
+            }, 
+            function(err, res) {
             if (err) throw err;
-            console.log('department added');
+            console.log(`${answer.addDepartment} added!`);
             })
             
             connection.query('Select * FROM department', function (err, res){
@@ -133,6 +137,76 @@ connection.connect(function(err) {
             })
       })
   }
+
+function removeDept() {
+    connection.query('Select name FROM department', function (err, res){
+        if (err) throw (err);
+        let names = res;
+        inquirer.prompt({
+            name: 'removeDept',
+            type: 'list',
+            message: 'What department would you like to remove',
+            choices: names
+        })
+        .then(function(answer){
+            connection.query(`DELETE FROM department WHERE name = "${answer.removeDept}"`, function (err, res){
+                if (err) throw (err);
+                console.log(`${answer.removeDept} removed`);
+
+                connection.query('Select * FROM department', function (err, res){
+                    if (err) throw (err);
+                    console.table(res);
+                    runSearch();
+            })
+        })
+        })
+    })
+}
+
+function addRole (){
+    connection.query('Select * FROM department', function (err, res){
+        if (err) throw (err);
+        let names = res;
+    inquirer.prompt([
+        {
+            name: 'title',
+            type: 'input',
+            message: 'What is the title of this role?'
+         },
+         {
+             name: 'salary',
+             type: 'input',
+             message: 'What is the salary for this role?'
+         },
+         {
+             name: 'department',
+             type: 'list',
+             message: 'What department does this role belong to?',
+             choices: names
+         }
+
+    ])
+    .then(function(answer){
+        console.log (answer.department);
+        // connection.query(`INSERT INTO role SET ?`, 
+        //     {
+        //     title: answer.title,
+        //     salary: answer.salary,
+        //     department_id: 
+
+        //     }, 
+        //     function(err, res) {
+        //     if (err) throw err;
+        //     console.log(`${answer.title} added!`);
+        //     })
+            connection.query('Select * FROM role', function (err, res){
+                if (err) throw (err);
+                console.table(res);
+                runSearch();
+    })
+    })
+})
+}
 
 
 
