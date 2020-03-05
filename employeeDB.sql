@@ -6,7 +6,7 @@ id int not null auto_increment,
 name varchar(30) not null,
 primary key (id)
 );
-
+use employee_DB;
 create table role (
     id int not null auto_increment,
     title varchar(30) not null,

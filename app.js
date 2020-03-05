@@ -102,7 +102,9 @@ connection.connect(function(err) {
                     break;
 
           }
-      })   
+        //   connection.end()
+      })  
+     
   }
 
   function allEmployees (){
@@ -126,7 +128,7 @@ connection.connect(function(err) {
             name: answer.addDepartment
             }, 
             function(err, res) {
-            if (err) throw err;
+            if (err) throw (err);
             console.log(`${answer.addDepartment} added!`);
             })
             
@@ -167,7 +169,7 @@ function addRole (){
     connection.query('Select * FROM department', function (err, res){
         if (err) throw (err);
         let names = res;
-    inquirer.prompt([
+        inquirer.prompt([
         {
             name: 'title',
             type: 'input',
@@ -185,28 +187,32 @@ function addRole (){
              choices: names
          }
 
-    ])
-    .then(function(answer){
-        console.log (answer.department);
-        // connection.query(`INSERT INTO role SET ?`, 
-        //     {
-        //     title: answer.title,
-        //     salary: answer.salary,
-        //     department_id: 
+        ])
+        .then(function(answer){
+        
+            for (i = 0; i < res.length; i++){
+                if (answer.department === res[i].name){
+                        connection.query(`INSERT INTO role SET ?`, {
+                                title: answer.title,
+                                salary: answer.salary,
+                                department_id: res[i].id },
 
-        //     }, 
-        //     function(err, res) {
-        //     if (err) throw err;
-        //     console.log(`${answer.title} added!`);
-        //     })
-            connection.query('Select * FROM role', function (err, res){
-                if (err) throw (err);
-                console.table(res);
-                runSearch();
+                            function (err, result) {
+                                if (err) throw (err);
+                                console.log (`${answer.title} added!`)
+                            }  
+                        )
+                };  
+            }
+        })
+        
     })
-    })
-})
+        
+    
 }
+
+
+
 
 
 
