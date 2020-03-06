@@ -1,6 +1,9 @@
 const inquirer = require('inquirer');
 const cTable = require('console.table');
 const mysql = require ('mysql');
+let ident;
+let employeeID;
+let roleID;
 
 
 var connection = mysql.createConnection({
@@ -23,17 +26,17 @@ connection.connect(function(err) {
           type: 'list',
           message: 'How can I assist you?',
           choices: [
-              'View all employees',
-              'View all employees by department',
-              'View all employees by manager',
-              'Add an employee',
-              'Remove an employee',
-              "Update an employee's role",
-              "Update an employee's manager",
+              'View all Employees',
+              'View all Employees by Department',
+              'View all Employees by Danager',
+              'Add an Employee',
+              'Remove an Employee',
+              "Update an Employee's Role",
+              "Update an Employee's Manager",
               'Add Department',
-              'Add role',
-              'Remove department',
-              'Remove role',
+              'Add Role',
+              'Remove Department',
+              'Remove Role',
               'View a Department Budget'
             
           ]
@@ -41,37 +44,37 @@ connection.connect(function(err) {
       .then(function(answer){
           switch(answer.action) {
 
-                case 'View all employees':
+                case 'View all Employees':
                     allEmployees();
                     // console.log('All Employee')
                     break;
 
-                case 'View all employees by department':
+                case 'View all Employees by Department':
                     // allDept();
                     console.log('Department Employees')
                     break;
 
-                case 'View all employees by manager':
+                case 'View all Employees by Manager':
                     // allManager();
                     console.log('Manager Employees')
                     break;
 
-                case 'Add an employee':
-                    // addEmploy();
-                    console.log('Employee Added')
+                case 'Add an Employee':
+                    addEmploy();
+                    // console.log('Employee Added')
                     break;
                 
-                case 'Remove an employee':
-                    // removeEmploy();
-                    console.log('Employee Removed')
+                case 'Remove an Employee':
+                    removeEmploy();
+                    // console.log('Employee Removed')
                     break;
 
-                case "Update an employee's role":
+                case "Update an Employee's Role":
                     // updateRole();
                     console.log("Role updated")
                     break;
 
-                case "Update an employee's manager":
+                case "Update an Employee's Manager":
                     // updateManager();
                     console.log('Manager udated');
                     break;
@@ -81,19 +84,19 @@ connection.connect(function(err) {
                     // console.log('Department added');
                     break;
 
-                case 'Add role':
+                case 'Add Role':
                     addRole();
                     // console.log('Role Added')
                     break;
 
-                case 'Remove department':
+                case 'Remove Department':
                     removeDept();
                     // console.log('Department Added')
                     break;
 
-                case 'Remove role':
-                    // removeRole();
-                    console.log('Role Removed');
+                case 'Remove Role':
+                    removeRole();
+                    // console.log('Role Removed');
                     break;
 
                 case 'View a Department Budget':
@@ -102,7 +105,7 @@ connection.connect(function(err) {
                     break;
 
           }
-        //   connection.end()
+          connection.end()
       })  
      
   }
@@ -200,6 +203,7 @@ function addRole (){
                             function (err, result) {
                                 if (err) throw (err);
                                 console.log (`${answer.title} added!`)
+                                runSearch();
                             }  
                         )
                 };  
@@ -210,6 +214,148 @@ function addRole (){
         
     
 }
+
+
+// NEED TO FINSIH THE ADD EMPLOYEE FUNCTION
+function addEmploy(){
+    connection.query('Select role.title, role.id AS roleID, CONCAT (employee.first_name, " ", employee.last_name) as fullname, employee.id as employeeID FROM role, employee', function (err, res){
+        if (err) throw (err);
+        let roles = [];
+        let employees = ['None'];
+        for (i = 0; i < res.length; i++){
+            employees.push(res[i].fullname);
+            roles.push(res[i].title);
+        }
+        roles = [... new Set(roles)]
+        employees = [...new Set(employees)]
+        inquirer.prompt([
+            {
+                name: 'first_name',
+                type: 'input',
+                message: 'What is the first name of the employee?'
+            },
+            {
+                name: 'last_name',
+                type: 'input',
+                message: 'What is the last name of the employee?'
+            },
+            {
+                name: 'role_id',
+                type: 'list',
+                message: 'What is the role of the employee?',
+                choices: roles
+            },
+            {
+                name: 'manager_name',
+                type: 'list',
+                choices: employees
+            }, 
+        ])
+        .then (function(answers){
+
+            for (i = 0; i < res.length; i ++){
+                if (answers.role_id === res[i].title){
+                    roleID = res[i].roleID
+                }
+
+                if(answers.manager_name === res[i].fullname){
+                    employeeID = res[i].employeeID
+                }
+
+                if (answers.manager_name === 'None'){
+                    connection.query(`INSERT INTO employee SET ?`, {
+                        first_name: answers.first_name,
+                        last_name: answers.last_name,
+                        role_id: roleID,
+                     },
+                     function (err, result) {
+                        if (err) throw (err);
+                        console.log (`${answers.first_name} added!`)
+                })
+                    runSearch();
+                    break;
+
+                }
+                }
+                connection.query(`INSERT INTO employee SET ?`, {
+                    first_name: answers.first_name,
+                    last_name: answers.last_name,
+                    role_id: roleID,
+                    manager_id: employeeID
+                 },
+
+                    function (err, result) {
+                        if (err) throw (err);
+                        console.log (`${answers.first_name} added!`)
+                        runSearch();
+                }) 
+
+        }
+)}
+    )}
+
+function removeRole() {
+    connection.query('SELECT title FROM role', function (err, response){
+        if (err) throw (err);
+        let roles = [];
+        for (i = 0; i < response.length; i++){
+            roles.push(response[i].title)
+        }
+        inquirer.prompt({
+            name: 'removeRole',
+            type: 'list',
+            message: 'What Role would you like to remove?',
+            choices: roles
+        })
+        .then(function(answer){
+            connection.query(`DELETE FROM role WHERE title = "${answer.removeRole}"`, function (err, res){
+                if (err) throw (err);
+                console.log(`${answer.removeRole} removed`);
+
+                connection.query('Select * FROM role', function (err, res){
+                    if (err) throw (err);
+                    console.table(res);
+                    runSearch();
+            })
+        })
+        })
+    })
+}
+
+function removeEmploy() {
+    connection.query('SELECT id, CONCAT (employee.first_name, " ", employee.last_name) fullname FROM employee', function (err, response){
+        if (err) throw (err);
+        let employee = [];
+        for (i = 0; i < response.length; i++){
+            employee.push(response[i].fullname)
+        }
+        inquirer.prompt({
+            name: 'removeEmploy',
+            type: 'list',
+            message: 'Which Employee would you like to remove?',
+            choices: employee
+        })
+        .then(function(answer){
+            for (i = 0; i < response.length; i ++){
+                if (answer.removeEmploy === response[i].fullname){
+                    ident = response[i].id
+                    console.log(ident);
+                }
+            }
+            connection.query(`DELETE FROM employee WHERE id = "${ident}"`, function (err, res){
+                if (err) throw (err);
+                console.log(`${answer.removeEmploy} removed`);
+
+                connection.query('Select * FROM employee', function (err, res){
+                    if (err) throw (err);
+                    console.table(res);
+                    runSearch();
+            })
+        })
+        })
+    })
+}
+    
 
 
 
