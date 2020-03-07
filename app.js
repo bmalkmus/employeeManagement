@@ -4,6 +4,7 @@ const mysql = require ('mysql');
 let ident;
 let employeeID;
 let roleID;
+let managerID;
 
 
 var connection = mysql.createConnection({
@@ -28,7 +29,7 @@ connection.connect(function(err) {
           choices: [
               'View all Employees',
               'View all Employees by Department',
-              'View all Employees by Danager',
+              'View all Employees by Manager',
               'Add an Employee',
               'Remove an Employee',
               "Update an Employee's Role",
@@ -37,7 +38,8 @@ connection.connect(function(err) {
               'Add Role',
               'Remove Department',
               'Remove Role',
-              'View a Department Budget'
+              'View a Department Budget',
+              "Exit"
             
           ]
       })
@@ -70,13 +72,13 @@ connection.connect(function(err) {
                     break;
 
                 case "Update an Employee's Role":
-                    // updateRole();
-                    console.log("Role updated")
+                    updateRole();
+                    // console.log("Role updated")
                     break;
 
                 case "Update an Employee's Manager":
-                    // updateManager();
-                    console.log('Manager udated');
+                    updateManager();
+                    // console.log('Manager udated');
                     break;
 
                 case 'Add Department':
@@ -100,82 +102,188 @@ connection.connect(function(err) {
                     break;
 
                 case 'View a Department Budget':
-                    // deptBudge();
-                    console.log('There is no budget!')
+                    deptBudge();
+                    // console.log('There is no budget!')
                     break;
+                case 'Exit':
+                    connection.end();
+                    break
 
           }
-          connection.end()
       })  
      
   }
 
- function updateRole(){
-     connection.query()
- } 
+function deptBudge() {
+    let table = [] 
+    let budget = [] 
+      connection.query('Select * FROM department', function (err, result){
+          if (err) throw (err);
+          let names = result;
+          inquirer.prompt([
+             {
+                 name: 'departments',
+                 type: 'list',
+                 message: 'What department would you like to see?',
+                 choices: names
+             }
+     ])
+            .then(function(answer){
+                connection.query(`SELECT e.id, first_name, last_name, title, name AS department, salary, manager_id
+                    FROM role r, department d, employee e WHERE r.department_id = d.id and  e.role_id = r.id`, function(err, res) {
+                        if (err) throw err;
+                        for (i = 0; i <res.length; i++){
+                                if (res[i].department === answer.departments){
+                                table.push(res[i]);
+                                budget.push(res[i].salary);
 
-function allManager(){
-    connection.query(`SELECT e.id, first_name, last_name, title, name as department, salary, manager_id as manager
-    from role r, department d, employee e where r.department_id = d.id and  e.role_id = r.id`, function (err, res){
-        if (err) throw (err);
-        let list = [];
-        for (i = 0; i < res.length; i ++){
-            list.push(res[res[i].manager_id].first_name + " " + res[res[i].manager_id].last_name)
-            list = [...new Set(list)];
-        }
-        inquirer.prompt([
-            {
-                name: 'manager',
-                type: 'list',
-                message: 'What manager would you like to select?',
-                choices: list
-            }
-   
+                            }
+                        }
+                        if (i = res.length - 1){
+                            console.log('-------------------------------')
+                            console.table(table);
+                            console.log("Your Budget for this department is $" +
+                                budget.reduce((a, b) => a + b, 0)
+                              )
+
+                            console.log('------------------------------')
+                            runSearch();
+                        }
+                })
+            })                   
+        })
+}
+
+function updateManager () {
+    let employees = [];
+    let manager = ['None'];
+    connection.query('Select employee.id as EmployID, manager_id, CONCAT (employee.first_name, " ", employee.last_name) as fullname FROM  employee',
+    function (err, res){
+       if (err) throw (err);
+       for (i = 0; i < res.length; i++){
+           employees.push(res[i].fullname);
+           manager.push(res[i].fullname);
+           employees = [...new Set(employees)];
+       }
+       inquirer.prompt ( [
+               {
+                   name: 'name',
+                   type: 'list',
+                   message: 'What is the name of the employee?',
+                   choices: employees
+               }, 
+               {
+                   name: 'manager',
+                   type: 'list',
+                   message: 'Who is the new manager of the employee?',
+                   choices: manager
+               }
            ])
            .then(function(answer){
-            for (i = 0; i < res.length; i ++){
-                if (answer.manager === res[res[i].manager_id].first_name + " " + res[res[i].manager_id].last_name){
-                    connection.query(`SELECT e.id, first_name, last_name, title, name as department, salary, manager_id as manager
-                    from role r, department d, employee e where r.department_id = d.id and  e.role_id = r.id and e.manager_id = ${res[i].id}`, function (err, res){
-                        if (err) throw (err); 
-                        console.table(res);
-                        runSearch();
+               for (i = 0; i < res.length; i ++){
+                   if (answer.manager === "None"){
+                       managerID = NULL;
+                   }
+                   if (answer.manager === res[i].fullname){
+                       managerID = res[i].EmployID
+                   };
+                   if (answer.name === res[i].fullname){
+                       employeeID = res[i].EmployID
+                   }
 
-                    })
-                }
-            }
-           })
-        
+               }
+                   connection.query(`Update employee SET manager_id = ${managerID} WHERE employee.id = ${employeeID}`, function (err, result){
+                       if (err) throw (err);
+                       console.log ('Manager is updated!');
+                       allEmployees();
+                   })
+}) 
     })
 }
 
-  function allDept(){
+ function updateRole(){
+     let employees = [];
+     let roles =[];
+     connection.query('Select employee.id as EmployID, role.title, role.id as roleID, CONCAT (employee.first_name, " ", employee.last_name) as fullname FROM role, employee',
+     function (err, res){
+        if (err) throw (err);
+        for (i = 0; i < res.length; i++){
+            employees.push(res[i].fullname);
+            roles.push(res[i].title);
+            employees = [...new Set(employees)];
+            roles = [...new Set(roles)];
+        }
+        inquirer.prompt ( [
+                {
+                    name: 'name',
+                    type: 'list',
+                    message: 'What is the name of the employee?',
+                    choices: employees
+                }, 
+                {
+                    name: 'role',
+                    type: 'list',
+                    message: 'What is the new role of the employee?',
+                    choices: roles
+                }
+            ])
+            .then(function(answer){
+                for (i = 0; i < res.length; i ++){
+                    if (answer.role === res[i].title){
+                        roleID = res[i].roleID
+                    };
+                    if (answer.name === res[i].fullname){
+                        employeeID = res[i].EmployID
+                    }
+
+                }
+                    connection.query(`Update employee SET role_id = ${roleID} WHERE employee.id = ${employeeID}`, function (err, result){
+                        if (err) throw (err);
+                        console.log ('Role is updated!');
+                        allEmployees();
+                    })
+}) 
+     })
+}
+
+function allDept(){
+      let table = []  
       connection.query('Select * FROM department', function (err, result){
           if (err) throw (err);
-          let names = res;
+          let names = result;
           inquirer.prompt([
              {
-                 name: 'department',
+                 name: 'departments',
                  type: 'list',
                  message: 'What department would you like to see?',
                  choices: names
              }
     
             ])
-            .then(function(answers){
-                for (i = 0; i < res.length; i++){
-                    if (answer.department === res[i].name){
-                        connection.query(`SELECT e.id, first_name, last_name, title, name as department, salary, manager_id as manager
-                        from role r, department d, employee e where r.department_id = d.id and  e.role_id = r.id and d.name = ${answer.department}`, function (err,res){
-                            if (err) throw (err);
-                            console.table(res);
+            .then(function(answer){
+                connection.query(`SELECT e.id, first_name, last_name, title, name AS department, salary, manager_id
+                    FROM role r, department d, employee e WHERE r.department_id = d.id and  e.role_id = r.id`, function(err, res) {
+                        if (err) throw err;
+                        for (i = 0; i <res.length; i++){
+                                if (res[i].department === answer.departments){
+                                
+                                // console.log(res[i]);
+                                table.push(res[i]);
+                            }
+                        }
+                        if (i = res.length - 1){
+                            console.log('-------------------------------')
+                            console.table(table)
                             runSearch();
-                        })
-                    }}
+                        
+                        }
+                })
+
             })
+                    
+        })
          
-      })
-  }
+}
 
   function allEmployees (){
     connection.query(`SELECT e.id, first_name, last_name, title, name AS department, salary, manager_id
@@ -184,7 +292,7 @@ function allManager(){
         console.table(res);
         runSearch();
     })
-  }
+}
 
   function addDept() {
       inquirer.prompt({
@@ -209,7 +317,7 @@ function allManager(){
                 runSearch();
             })
       })
-  }
+}
 
 function removeDept() {
     connection.query('Select name FROM department', function (err, res){
@@ -358,7 +466,8 @@ function addEmploy(){
 
         }
 )}
-    )}
+    )
+}
 
 function removeRole() {
     connection.query('SELECT title FROM role', function (err, response){
