@@ -50,13 +50,13 @@ connection.connect(function(err) {
                     break;
 
                 case 'View all Employees by Department':
-                    // allDept();
-                    console.log('Department Employees')
+                    allDept();
+                    // console.log('Department Employees')
                     break;
 
                 case 'View all Employees by Manager':
-                    // allManager();
-                    console.log('Manager Employees')
+                    allManager();
+                    // console.log('Manager Employees')
                     break;
 
                 case 'Add an Employee':
@@ -110,10 +110,78 @@ connection.connect(function(err) {
      
   }
 
+ function updateRole(){
+     connection.query()
+ } 
+
+function allManager(){
+    connection.query(`SELECT e.id, first_name, last_name, title, name as department, salary, manager_id as manager
+    from role r, department d, employee e where r.department_id = d.id and  e.role_id = r.id`, function (err, res){
+        if (err) throw (err);
+        let list = [];
+        for (i = 0; i < res.length; i ++){
+            list.push(res[res[i].manager_id].first_name + " " + res[res[i].manager_id].last_name)
+            list = [...new Set(list)];
+        }
+        inquirer.prompt([
+            {
+                name: 'manager',
+                type: 'list',
+                message: 'What manager would you like to select?',
+                choices: list
+            }
+   
+           ])
+           .then(function(answer){
+            for (i = 0; i < res.length; i ++){
+                if (answer.manager === res[res[i].manager_id].first_name + " " + res[res[i].manager_id].last_name){
+                    connection.query(`SELECT e.id, first_name, last_name, title, name as department, salary, manager_id as manager
+                    from role r, department d, employee e where r.department_id = d.id and  e.role_id = r.id and e.manager_id = ${res[i].id}`, function (err, res){
+                        if (err) throw (err); 
+                        console.table(res);
+                        runSearch();
+
+                    })
+                }
+            }
+           })
+        
+    })
+}
+
+  function allDept(){
+      connection.query('Select * FROM department', function (err, result){
+          if (err) throw (err);
+          let names = res;
+          inquirer.prompt([
+             {
+                 name: 'department',
+                 type: 'list',
+                 message: 'What department would you like to see?',
+                 choices: names
+             }
+    
+            ])
+            .then(function(answers){
+                for (i = 0; i < res.length; i++){
+                    if (answer.department === res[i].name){
+                        connection.query(`SELECT e.id, first_name, last_name, title, name as department, salary, manager_id as manager
+                        from role r, department d, employee e where r.department_id = d.id and  e.role_id = r.id and d.name = ${answer.department}`, function (err,res){
+                            if (err) throw (err);
+                            console.table(res);
+                            runSearch();
+                        })
+                    }}
+            })
+         
+      })
+  }
+
   function allEmployees (){
-    connection.query('Select * from employee', function(err, res) {
+    connection.query(`SELECT e.id, first_name, last_name, title, name AS department, salary, manager_id
+    FROM role r, department d, employee e WHERE r.department_id = d.id and  e.role_id = r.id`, function(err, res) {
         if (err) throw err;
-        console.table('this is my table information');
+        console.table(res);
         runSearch();
     })
   }
@@ -215,8 +283,6 @@ function addRole (){
     
 }
 
-
-// NEED TO FINSIH THE ADD EMPLOYEE FUNCTION
 function addEmploy(){
     connection.query('Select role.title, role.id AS roleID, CONCAT (employee.first_name, " ", employee.last_name) as fullname, employee.id as employeeID FROM role, employee', function (err, res){
         if (err) throw (err);
