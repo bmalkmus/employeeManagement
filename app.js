@@ -1,6 +1,8 @@
 const inquirer = require('inquirer');
 const cTable = require('console.table');
 const mysql = require ('mysql');
+require('dotenv').config();
+
 let ident;
 let employeeID;
 let roleID;
@@ -11,7 +13,7 @@ var connection = mysql.createConnection({
     host : 'localhost',
     port: 3306,
     user: 'root',
-    password: 'password',
+    password: process.env.PASSWORD,
     database: 'employee_db'
 })
 
@@ -113,6 +115,24 @@ connection.connect(function(err) {
       })  
      
   }
+
+function allManager(){
+    managersID= []
+    connection.query(`Select employee.id, CONCAT(employee.first_name + " " + employee.last_name) as fullname, manager_id FROM employee`, function (err, res){
+        if (err) throw (err);
+        for (i = 0; i < res.length; i++){
+            if(res[i].manager_id !== null){ 
+            
+            managersID.push(res[i].manager_id);
+            }
+        }
+        if (i = res.length-1){
+            console.log(managersID);
+            runSearch();
+        }
+
+    })
+}
 
 function deptBudge() {
     let table = [] 
