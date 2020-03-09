@@ -134,13 +134,12 @@ function allManager(){
                 connection.query(`Select CONCAT(employee.first_name, " ", employee.last_name) as fullname from employee where employee.id = ${managersID[j]}`, function (err, response){
                     if (err) throw (err);
                     managerList.push(response);
-                    if ( j = managerList.length - 1){
-                        runSearch();
-                        console.log(managerList);
-                    }
-
+                    
                 })
             }
+                            if ( j = managerList.length - 1) {
+                            console.log(j)
+                            }
         }
 
     })
