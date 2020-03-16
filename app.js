@@ -116,34 +116,6 @@ connection.connect(function(err) {
      
   }
 
-function allManager(){
-    let managersID= []
-    let managerList = []
-    connection.query(`Select manager_id FROM employee`, function (err, res){
-        if (err) throw (err);
-        for (i = 0; i < res.length; i++){
-            if(res[i].manager_id !== null){ 
-            
-            managersID.push(res[i].manager_id);
-            managersID = [...new Set(managersID)];
-            }
-        }
-        if (i = res.length-1){
-            for (j = 0; j < managersID.length; j++){
-
-                connection.query(`Select CONCAT(employee.first_name, " ", employee.last_name) as fullname from employee where employee.id = ${managersID[j]}`, function (err, response){
-                    if (err) throw (err);
-                    managerList.push(response);
-                    
-                })
-            }
-                            if ( j = managerList.length - 1) {
-                            console.log(j)
-                            }
-        }
-
-    })
-}
 
 function deptBudge() {
     let table = [] 
