@@ -15,3 +15,6 @@ console.table npm <br>
 
 ## Deployment
 https://bmalkmus.github.io/employeeManagement/
+
+## Screenshot
+![Screenshot](CLImanagement.png)
